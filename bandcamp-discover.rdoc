@@ -1,0 +1,5 @@
+= bandcamp-discover
+
+Generate this with
+    bandcamp-discover _doc
+After you have described your command line interface

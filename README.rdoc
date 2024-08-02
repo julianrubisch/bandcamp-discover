@@ -1,0 +1,6 @@
+= bandcamp-discover
+
+Describe your project here
+
+:include:bandcamp-discover.rdoc
+
