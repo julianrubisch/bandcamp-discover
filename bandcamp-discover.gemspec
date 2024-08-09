@@ -18,5 +18,10 @@ spec = Gem::Specification.new do |s|
   s.add_development_dependency('rake')
   s.add_development_dependency('rdoc')
   s.add_development_dependency('minitest')
+  s.add_development_dependency('standard')
   s.add_runtime_dependency('gli','~> 2.21.5')
+
+  s.add_dependency('playwright-ruby-client')
+  s.add_dependency('sqlite3')
+  s.add_dependency('async')
 end

@@ -1,13 +1,6 @@
 #!/usr/bin/env ruby
 require 'gli'
-begin # XXX: Remove this begin/rescue before distributing your app
 require 'bandcamp-discover'
-rescue LoadError
-  STDERR.puts "In development, you need to use `bundle exec bin/bandcamp-discover` to run your app"
-  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
-  STDERR.puts "Feel free to remove this message from bin/bandcamp-discover now"
-  exit 64
-end
 
 class App
   extend GLI::App
@@ -19,31 +12,43 @@ class App
   subcommand_option_handling :normal
   arguments :strict
 
-  desc 'Describe some switch here'
-  switch [:s,:switch]
-
-  desc 'Describe some flag here'
-  default_value 'the default'
-  arg_name 'The name of the argument'
-  flag [:f,:flagname]
-
-  desc 'Describe scrape here'
-  arg_name 'Describe arguments to scrape here'
+  desc 'Scrape bandcamp discover, labels, or albums'
+  # arg_name 'Describe arguments to scrape here'
   command :scrape do |c|
-    c.desc 'Describe a switch to scrape'
-    c.switch :s
+    c.desc 'Use a headless browser'
+    c.switch :headless, default_value: true
 
-    c.desc 'Describe a flag to scrape'
-    c.default_value 'default'
-    c.flag :f
-    c.action do |global_options,options,args|
+    c.arg "genre"
+    c.command :discover do |discover|
+      discover.action do |global_options,options,args|
+        genre = args.shift
+        genre ||= "experimental"
 
-      # Your command logic here
+        Playwright.create(playwright_cli_executable_path: 'npx playwright') do |playwright|
+          playwright.chromium.launch(headless: options[:headless]) do |browser|
+            puts BandcampDiscover::Scrapers::Discover.new(genre:, browser:).scrape
+          end
+        end
 
-      # If you have any errors, just raise them
-      # raise "that command made no sense"
+        # If you have any errors, just raise them
+        # raise "that command made no sense"
+      end
+    end
 
-      puts "scrape command ran"
+    c.arg "url", required: true
+    c.command :label do |label|
+      label.action do |global_options,options,args|
+        url = args.shift
+
+        Playwright.create(playwright_cli_executable_path: 'npx playwright') do |playwright|
+          playwright.chromium.launch(headless: options[:headless]) do |browser|
+            puts BandcampDiscover::Scrapers::Label.new(url:, browser:).scrape
+          end
+        end
+
+        # If you have any errors, just raise them
+        # raise "that command made no sense"
+      end
     end
   end
 
