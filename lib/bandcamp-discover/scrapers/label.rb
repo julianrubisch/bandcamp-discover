@@ -11,7 +11,9 @@ module BandcampDiscover
           bio_container = page.wait_for_selector("#bio-container")
           bio_text = bio_container.query_selector("#bio-text")
           if bio_text&.inner_html =~ /label|platform/
-            return [@url, Scrapers::Music.new(url: "#{@url}/music", browser: @browser).scrape]
+            return Sync do
+              [@url, Scrapers::Music.new(url: "#{@url}/music", browser: @browser).scrape]
+            end
           end
         end
       end
