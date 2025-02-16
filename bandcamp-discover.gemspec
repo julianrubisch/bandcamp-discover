@@ -24,6 +24,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('playwright-ruby-client')
   s.add_dependency('sqlite3')
   s.add_dependency('async')
+  s.add_dependency('concurrent-ruby')
   s.add_dependency('base64')
   s.add_dependency('logger')
   s.add_dependency('ostruct')

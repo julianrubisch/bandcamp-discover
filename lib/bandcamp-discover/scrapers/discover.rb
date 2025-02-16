@@ -1,6 +1,10 @@
-require_relative "./base"
-require_relative "./label"
+require_relative "base"
+require_relative "label"
 require "uri"
+require "async"
+require "async/semaphore"
+require "async/barrier"
+require "concurrent"
 
 module BandcampDiscover
   module Scrapers
@@ -21,10 +25,21 @@ module BandcampDiscover
 
           uris = links.map { ::URI.parse(_1) }
 
-          uris.map do |uri|
-            url = "#{uri.scheme}://#{uri.host}"
-            Scrapers::Label.new(url: url, browser: @browser).scrape
-          end.compact
+          barrier = Async::Barrier.new
+
+          Sync do
+            semaphore = Async::Semaphore.new(Concurrent.processor_count, parent: barrier)
+
+            uris.map do |uri|
+              url = "#{uri.scheme}://#{uri.host}"
+
+              semaphore.async do
+                Scrapers::Label.new(url: url, browser: @browser).scrape
+              end
+            end.map(&:wait).compact
+          ensure
+            barrier.stop
+          end
         end
       end
     end
