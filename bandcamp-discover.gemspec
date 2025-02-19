@@ -3,11 +3,11 @@ require File.join([File.dirname(__FILE__),'lib','bandcamp-discover','version.rb'
 spec = Gem::Specification.new do |s|
   s.name = 'bandcamp-discover'
   s.version = BandcampDiscover::VERSION
-  s.author = 'Your Name Here'
-  s.email = 'your@email.address.com'
-  s.homepage = 'http://your.website.com'
+  s.author = 'Julian RUbisch'
+  s.email = 'julian@julianrubisch.at'
+  s.homepage = 'https://julianrubisch.at'
   s.platform = Gem::Platform::RUBY
-  s.summary = 'A description of your project'
+  s.summary = 'Uses Playwright to scrape bandcamp labels'
   s.files = `git ls-files`.split("
 ")
   s.require_paths << 'lib'
