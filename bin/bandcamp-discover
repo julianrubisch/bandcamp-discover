@@ -18,6 +18,9 @@ class App
     c.desc 'Use a headless browser'
     c.switch :headless, default_value: true
 
+    c.desc 'Maximum tasks for scraping a label'
+    c.flag :"max-tasks", default_value: 2
+
     c.arg "genre"
     c.command :discover do |discover|
       discover.action do |global_options,options,args|
@@ -25,7 +28,7 @@ class App
         genre ||= "experimental"
 
         Playwright.create(playwright_cli_executable_path: 'npx playwright') do |playwright|
-          playwright.chromium.launch(headless: options[:headless]) do |browser|
+          playwright.chromium.launch(headless: options["headless"]) do |browser|
             puts BandcampDiscover::Scrapers::Discover.new(genre:, browser:).scrape
           end
         end
@@ -41,8 +44,8 @@ class App
         url = args.shift
 
         Playwright.create(playwright_cli_executable_path: 'npx playwright') do |playwright|
-          playwright.chromium.launch(headless: options[:headless]) do |browser|
-            puts BandcampDiscover::Scrapers::Label.new(url:, browser:).scrape
+          playwright.chromium.launch(headless: options["headless"]) do |browser|
+            puts BandcampDiscover::Scrapers::Label.new(url:, browser:, max_tasks: options.values.first["max-tasks"].to_i).scrape
           end
         end
 

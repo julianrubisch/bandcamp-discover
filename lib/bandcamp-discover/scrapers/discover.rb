@@ -9,8 +9,8 @@ require "concurrent"
 module BandcampDiscover
   module Scrapers
     class Discover < Base
-      def initialize(genre:, browser:)
-        super(url: "https://bandcamp.com/discover/#{genre}?s=rand", browser: browser)
+      def initialize(genre:, browser:, max_tasks: Concurrent.processor_count)
+        super(url: "https://bandcamp.com/discover/#{genre}?s=rand", browser: browser, max_tasks: max_tasks)
       end
 
       def scrape
@@ -28,7 +28,7 @@ module BandcampDiscover
           barrier = Async::Barrier.new
 
           Sync do
-            semaphore = Async::Semaphore.new(Concurrent.processor_count, parent: barrier)
+            semaphore = Async::Semaphore.new(@max_tasks, parent: barrier)
 
             uris.map do |uri|
               url = "#{uri.scheme}://#{uri.host}"

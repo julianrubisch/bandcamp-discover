@@ -6,7 +6,7 @@ require "async/semaphore"
 module BandcampDiscover
   module Scrapers
     class Music < Base
-      def initialize(url:, browser:)
+      def initialize(url:, browser:, max_tasks:)
         super
 
         uri = URI.parse(url)
@@ -19,7 +19,7 @@ module BandcampDiscover
           album_list = page.wait_for_selector("#music-grid")
           album_links = album_list.query_selector_all("li.music-grid-item > a")
 
-          semaphore = Async::Semaphore.new(2)
+          semaphore = Async::Semaphore.new(@max_tasks)
 
           album_tags = album_links.take(20).map do |album_link|
             semaphore.async do
