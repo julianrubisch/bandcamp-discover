@@ -34,7 +34,11 @@ module BandcampDiscover
               url = "#{uri.scheme}://#{uri.host}"
 
               semaphore.async do
-                Scrapers::Label.new(url: url, browser: @browser).scrape
+                if block_given?
+                  yield url
+                else
+                  Scrapers::Label.new(url: url, browser: @browser).scrape
+                end
               end
             end.map(&:wait).compact
           ensure

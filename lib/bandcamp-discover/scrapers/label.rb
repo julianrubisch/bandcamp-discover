@@ -25,6 +25,7 @@ module BandcampDiscover
             end
           else
             puts "not a label: #{@url}"
+            nil
           end
         end
       end
