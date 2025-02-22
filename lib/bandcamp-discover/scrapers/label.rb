@@ -21,7 +21,13 @@ module BandcampDiscover
 
               puts "done scraping #{@url}"
 
-              [@url, name, location, music_tags&.compact]
+              {
+                url: @url,
+                name: name,
+                location: location,
+                bio: bio_text.inner_text,
+                tags_with_weights: music_tags&.compact
+              }
             end
           else
             puts "not a label: #{@url}"
