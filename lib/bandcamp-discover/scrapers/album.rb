@@ -4,7 +4,7 @@ require_relative "./music"
 module BandcampDiscover
   module Scrapers
     class Album < Base
-      def scrape
+      def scrape(force: false)
         super do |page|
           page.goto(@url)
 

@@ -13,7 +13,7 @@ module BandcampDiscover
         @base_url = "#{uri.scheme}://#{uri.host}"
       end
 
-      def scrape
+      def scrape(force: false)
         super do |page|
           page.goto(@url)
           album_list = page.wait_for_selector("#music-grid")

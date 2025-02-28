@@ -10,7 +10,7 @@ module BandcampDiscover
         @max_tasks = max_tasks
       end
 
-      def scrape
+      def scrape(force: false)
         yield @page if block_given?
       rescue Playwright::TimeoutError
         puts "Failed to wait for element"
