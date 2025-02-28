@@ -25,7 +25,7 @@ module BandcampDiscover
                 url: @url,
                 name: name,
                 location: location,
-                bio: bio_text.inner_text,
+                bio: bio_text.inner_html,
                 tags_with_weights: music_tags&.compact
               }
             end
