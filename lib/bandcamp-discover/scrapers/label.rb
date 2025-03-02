@@ -15,7 +15,7 @@ module BandcampDiscover
           name = band_name_location_container.query_selector(".title").inner_text
           location = band_name_location_container.query_selector(".location").inner_text
 
-          if force || bio_text&.inner_html =~ /label|platform/i
+          if force || bio_text&.inner_html =~ /label|platform|records/i
             return Sync do
               music_tags = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks).scrape
 
@@ -25,7 +25,7 @@ module BandcampDiscover
                 url: @url,
                 name: name,
                 location: location,
-                bio: bio_text.inner_html,
+                bio: bio_text.inner_text,
                 tags_with_weights: music_tags&.compact
               }
             end
