@@ -23,7 +23,7 @@ module BandcampDiscover
 
           album_tags = album_links.take(20).map do |album_link|
             semaphore.async do
-              url = "#{@base_url}#{album_link[:href]}"
+              url = album_link[:href].start_with?("https://") ? album_link[:href] : "#{@base_url}#{album_link[:href]}"
               puts "starting to scrape #{url}"
 
               tags = Scrapers::Album.new(url: url, browser: @browser).scrape
