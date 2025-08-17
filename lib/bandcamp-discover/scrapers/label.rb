@@ -1,5 +1,6 @@
 require_relative "./base"
 require_relative "./music"
+require_relative "../analyzer"
 
 module BandcampDiscover
   module Scrapers
@@ -15,7 +16,7 @@ module BandcampDiscover
           name = band_name_location_container.query_selector(".title").inner_text
           location = band_name_location_container.query_selector(".location").inner_text
 
-          if force || bio_text&.inner_html =~ /label|platform|records/i
+          if force || Analyzer.new(bio_text&.inner_html).label?
             return Sync do
               music_tags = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks).scrape
 
