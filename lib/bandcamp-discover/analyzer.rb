@@ -21,7 +21,7 @@ module BandcampDiscover
           }
         )
 
-        JSON.parse(response["choices"][0]["message"]["content"])["answer"]&.downcase == "true"
+        JSON.parse(response["choices"][0]["message"]["content"])["answer"]&.to_s&.downcase == "true"
       else
         @description.match? /label|platform|records/i
       end
