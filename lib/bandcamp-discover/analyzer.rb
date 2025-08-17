@@ -5,9 +5,25 @@ module BandcampDiscover
     end
 
     def label?
-      if defined?(OpenRouter) && !!ENV["OPENROUTER_API_KEY"]
+      if defined?(OpenRouter) && !!OpenRouter.configuration.access_token
+        response = OpenRouter::Client.new.complete(
+          [
+            { role: "system", content: "You are given a description that could or could not be that of a record label. Analyze and answer with true or false only. Be critical: Individuals and bands are not labels, but collectives can be labels." },
+            { role: "user", content: @description }
+          ],
+          model: [
+            "mistralai/mistral-small-3.2-24b-instruct:free"
+          ],
+          extras: {
+            response_format: {
+              type: "json_object"
+            }
+          }
+        )
+
+        JSON.parse(response["choices"][0]["message"]["content"])["answer"]&.downcase == "true"
       else
-        @description =~ /label|platform|records/i
+        @description.match? /label|platform|records/i
       end
     end
   end
