@@ -1,7 +1,8 @@
 module BandcampDiscover
   class Analyzer
-    def initialize(description)
+    def initialize(description, model = nil)
       @description = description
+      @model = model || "openrouter/auto"
     end
 
     def label?
@@ -12,7 +13,7 @@ module BandcampDiscover
             { role: "user", content: @description }
           ],
           model: [
-            "mistralai/mistral-small-3.2-24b-instruct:free"
+            @model
           ],
           extras: {
             response_format: {
