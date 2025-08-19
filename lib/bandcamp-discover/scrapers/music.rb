@@ -21,20 +21,24 @@ module BandcampDiscover
 
           semaphore = Async::Semaphore.new(@max_tasks)
 
-          album_tags = album_links.take(20).map do |album_link|
+          albums = album_links.take(20).map do |album_link|
             semaphore.async do
               url = album_link[:href].start_with?("https://") ? album_link[:href] : "#{@base_url}#{album_link[:href]}"
               puts "starting to scrape #{url}"
 
-              tags = Scrapers::Album.new(url: url, browser: @browser).scrape
+              album = Scrapers::Album.new(url: url, browser: @browser).scrape
 
               puts "done scraping #{url}"
 
-              tags
+              album
             end
           end.map(&:wait)
 
-          normalize_tally(album_tags.flatten.tally)
+          albums.map! do |album_url, album_title, album_tags, album_player|
+            { url: album_url, title: album_title, tags: album_tags, player_url: album_player }
+          end
+
+          [albums, normalize_tally(albums.map { _1[:tags] }.flatten.tally)]
         end
       end
 

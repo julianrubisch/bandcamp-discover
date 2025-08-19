@@ -18,7 +18,7 @@ module BandcampDiscover
 
           if force || Analyzer.new(bio_text&.inner_html).label?
             return Sync do
-              music_tags = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks).scrape
+              albums, music_tags = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks).scrape
 
               puts "done scraping #{@url}"
 
@@ -27,7 +27,8 @@ module BandcampDiscover
                 name: name,
                 location: location,
                 bio: bio_text.inner_text,
-                tags_with_weights: music_tags&.compact
+                tags_with_weights: music_tags&.compact,
+                albums: albums
               }
             end
           else
