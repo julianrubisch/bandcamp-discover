@@ -27,5 +27,28 @@ module BandcampDiscover
         @description.match? /label|platform|records/i
       end
     end
+
+    def accepts_demos?
+      if defined?(OpenRouter) && !!OpenRouter.configuration.access_token
+        response = OpenRouter::Client.new.complete(
+          [
+            { role: "system", content: "You are given a description of a record label or music platform. Analyze if they accept demo submissions from artists. Look for mentions of 'demos', 'demo submissions', 'send demos', 'submit music', 'accepting submissions', contact information for demos, or similar language. Answer with a JSON object {\"answer\": true|false}." },
+            { role: "user", content: @description }
+          ],
+          model: [
+            @model
+          ],
+          extras: {
+            response_format: {
+              type: "json_object"
+            }
+          }
+        )
+
+        JSON.parse(response["choices"][0]["message"]["content"])["answer"]&.to_s&.downcase == "true"
+      else
+        false
+      end
+    end
   end
 end
