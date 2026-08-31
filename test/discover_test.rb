@@ -4,7 +4,7 @@ require "bandcamp-discover/scrapers/discover"
 class DiscoverTest < Minitest::Test
   Discover = BandcampDiscover::Scrapers::Discover
 
-  # Stubs the one network method, so the rest of the class is exercised for real.
+  # Stub only the network, so the rest of the class runs for real.
   def build(genre: "ambient", pages: 1, batches: [])
     scraper = Discover.new(genre: genre, max_tasks: 2, pages: pages)
     queue = batches.dup
@@ -63,9 +63,7 @@ class DiscoverTest < Minitest::Test
     assert_equal ["https://ok.bandcamp.com"], collect(scraper)
   end
 
-  # The endpoint is private and unversioned in practice. If Bandcamp changes it,
-  # discovery must fail loudly instead of quietly finding nothing -- which is
-  # exactly how the previous DOM-scraping breakage went unnoticed.
+  # A silent zero-result discovery is how the last breakage hid; these must raise.
   def test_raises_when_results_array_is_missing
     scraper = build(batches: [{"cursor" => "*"}])
 

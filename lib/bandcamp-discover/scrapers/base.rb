@@ -2,10 +2,8 @@ require "playwright"
 
 module BandcampDiscover
   module Scrapers
-    # Raised when a page never renders the element a scraper waits on. This used
-    # to be rescued and printed, which turned a total scraping outage into a
-    # single line of stdout and a nil return -- callers saw "no results" rather
-    # than "broken", and the failure went unnoticed.
+    # Previously rescued into a puts + nil return, which made a total scraping
+    # outage read as "no results" and go unnoticed.
     class ScrapeError < StandardError; end
 
     class Base

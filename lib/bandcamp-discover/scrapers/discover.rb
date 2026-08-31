@@ -9,33 +9,23 @@ require "concurrent"
 
 module BandcampDiscover
   module Scrapers
-    # Discovery does not use Playwright.
+    # Not Playwright: the /discover/<genre> grid only exists after the Vue app
+    # hydrates, and Fastly serves that page a JS challenge to datacenter IPs that
+    # headless Chrome never clears. The XHR behind it is unchallenged.
     #
-    # The /discover/<genre> HTML page is a Vue app: the server-rendered markup
-    # carries only filter metadata, and the result grid (ul.items) appears only
-    # after the app hydrates and issues the XHR below. Fastly bot management
-    # serves that page a JS "Client Challenge" to datacenter IPs, which headless
-    # Chrome does not clear, so wait_for_selector("ul.items") times out and
-    # discovery silently yields nothing.
-    #
-    # The XHR itself is not challenged and needs no browser, cookies or auth. It
-    # is a private endpoint backing Bandcamp's own frontend, though -- there is no
-    # public discover API -- so the response shape is unversioned in practice and
-    # can change without notice. assert_shape! exists to make that fail loudly
-    # rather than quietly discovering zero labels.
+    # It is also private and unversioned, hence assert_shape!.
     class Discover
       API_URI = URI("https://bandcamp.com/api/discover/1/discover_web")
       PAGE_SIZE = 60
       OPEN_TIMEOUT = 10
       READ_TIMEOUT = 30
 
-      # Sent by the discover page itself; "a" is albums, "s" is subscriptions.
+      # "a" is albums, "s" is subscriptions.
       RESULT_TYPES = %w[a s].freeze
 
       class ResponseError < StandardError; end
 
-      # browser: is accepted but unused, so callers that still open a Playwright
-      # browser for the label scrapes keep working unchanged.
+      # browser: is unused, kept so existing callers do not break.
       def initialize(genre:, browser: nil, max_tasks: Concurrent.processor_count, pages: 1)
         @genre = genre
         @browser = browser
@@ -67,8 +57,7 @@ module BandcampDiscover
 
       private
 
-      # Walks @pages batches via the cursor the API hands back. Labels repeat
-      # across a genre (one label, many albums), so dedupe before scraping.
+      # One label recurs across its albums, so dedupe.
       def band_urls
         cursor = "*"
         urls = []
@@ -131,7 +120,7 @@ module BandcampDiscover
         raise ResponseError, "discover_web results carry no band_url (keys: #{body["results"].first.keys.inspect})"
       end
 
-      # band_url arrives as "https://foo.bandcamp.com?from=discover_page".
+      # Strips the ?from=discover_page band_url carries.
       def root_url(band_url)
         return nil if band_url.nil? || band_url.empty?
 
