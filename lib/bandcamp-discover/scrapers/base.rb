@@ -1,7 +1,11 @@
-require 'playwright'
+require "playwright"
 
 module BandcampDiscover
   module Scrapers
+    # Previously rescued into a puts + nil return, which made a total scraping
+    # outage read as "no results" and go unnoticed.
+    class ScrapeError < StandardError; end
+
     class Base
       def initialize(url:, browser:, max_tasks: 2)
         @url = url
@@ -12,8 +16,8 @@ module BandcampDiscover
 
       def scrape(force: false)
         yield @page if block_given?
-      rescue Playwright::TimeoutError
-        puts "Failed to wait for element"
+      rescue Playwright::TimeoutError => e
+        raise ScrapeError, "Timed out waiting for an element on #{@url}: #{e.message}"
       end
     end
   end
