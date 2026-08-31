@@ -14,7 +14,7 @@ class DiscoverTest < Minitest::Test
 
   def batch(band_urls, cursor: nil)
     {
-      "results" => band_urls.map { { "band_url" => _1, "item_type" => "a" } },
+      "results" => band_urls.map { {"band_url" => _1, "item_type" => "a"} },
       "cursor" => cursor
     }
   end
@@ -24,64 +24,64 @@ class DiscoverTest < Minitest::Test
   end
 
   def test_yields_scheme_and_host_only
-    scraper = build(batches: [ batch([ "https://polarseasrecordings.bandcamp.com?from=discover_page" ]) ])
+    scraper = build(batches: [batch(["https://polarseasrecordings.bandcamp.com?from=discover_page"])])
 
-    assert_equal [ "https://polarseasrecordings.bandcamp.com" ], collect(scraper)
+    assert_equal ["https://polarseasrecordings.bandcamp.com"], collect(scraper)
   end
 
   def test_dedupes_labels_appearing_under_several_albums
-    scraper = build(batches: [ batch([
+    scraper = build(batches: [batch([
       "https://a.bandcamp.com?from=discover_page",
       "https://a.bandcamp.com?from=discover_page",
       "https://b.bandcamp.com?from=discover_page"
-    ]) ])
+    ])])
 
-    assert_equal [ "https://a.bandcamp.com", "https://b.bandcamp.com" ], collect(scraper).sort
+    assert_equal ["https://a.bandcamp.com", "https://b.bandcamp.com"], collect(scraper).sort
   end
 
   def test_follows_cursor_across_pages
     scraper = build(pages: 2, batches: [
-      batch([ "https://a.bandcamp.com" ], cursor: "next"),
-      batch([ "https://b.bandcamp.com" ], cursor: nil)
+      batch(["https://a.bandcamp.com"], cursor: "next"),
+      batch(["https://b.bandcamp.com"], cursor: nil)
     ])
 
-    assert_equal [ "https://a.bandcamp.com", "https://b.bandcamp.com" ], collect(scraper).sort
+    assert_equal ["https://a.bandcamp.com", "https://b.bandcamp.com"], collect(scraper).sort
   end
 
   def test_stops_early_when_cursor_is_exhausted
     scraper = build(pages: 3, batches: [
-      batch([ "https://a.bandcamp.com" ], cursor: nil),
-      batch([ "https://never-reached.bandcamp.com" ])
+      batch(["https://a.bandcamp.com"], cursor: nil),
+      batch(["https://never-reached.bandcamp.com"])
     ])
 
-    assert_equal [ "https://a.bandcamp.com" ], collect(scraper)
+    assert_equal ["https://a.bandcamp.com"], collect(scraper)
   end
 
   def test_skips_unusable_band_urls
-    scraper = build(batches: [ batch([ nil, "", "not a url", "/relative", "https://ok.bandcamp.com" ]) ])
+    scraper = build(batches: [batch([nil, "", "not a url", "/relative", "https://ok.bandcamp.com"])])
 
-    assert_equal [ "https://ok.bandcamp.com" ], collect(scraper)
+    assert_equal ["https://ok.bandcamp.com"], collect(scraper)
   end
 
   # The endpoint is private and unversioned in practice. If Bandcamp changes it,
   # discovery must fail loudly instead of quietly finding nothing -- which is
   # exactly how the previous DOM-scraping breakage went unnoticed.
   def test_raises_when_results_array_is_missing
-    scraper = build(batches: [ { "cursor" => "*" } ])
+    scraper = build(batches: [{"cursor" => "*"}])
 
     error = assert_raises(Discover::ResponseError) { collect(scraper) }
     assert_match(/no results array/, error.message)
   end
 
   def test_raises_when_results_no_longer_carry_band_url
-    scraper = build(batches: [ { "results" => [ { "item_id" => 1, "band_name" => "x" } ], "cursor" => nil } ])
+    scraper = build(batches: [{"results" => [{"item_id" => 1, "band_name" => "x"}], "cursor" => nil}])
 
     error = assert_raises(Discover::ResponseError) { collect(scraper) }
     assert_match(/no band_url/, error.message)
   end
 
   def test_empty_results_is_not_an_error
-    scraper = build(batches: [ { "results" => [], "cursor" => nil } ])
+    scraper = build(batches: [{"results" => [], "cursor" => nil}])
 
     assert_empty collect(scraper)
   end

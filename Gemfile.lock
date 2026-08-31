@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    bandcamp-discover (0.1.7)
+    bandcamp-discover (0.5.0)
       async
       base64
       concurrent-ruby

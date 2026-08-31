@@ -1,4 +1,4 @@
-require 'playwright'
+require "playwright"
 
 module BandcampDiscover
   module Scrapers
