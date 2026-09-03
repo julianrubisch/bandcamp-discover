@@ -2,5 +2,20 @@
 
 Describe your project here
 
+== Configuration
+
+When the +open_router+ gem is loaded and has an access token, +Analyzer+
+asks a model whether a Bandcamp bio belongs to a label and whether it
+accepts demos. The model and both prompts can be set by the host app:
+
+  BandcampDiscover.configure do |config|
+    config.model = "anthropic/claude-3.5-haiku"   # default: "openrouter/auto"
+    config.label_prompt = "..."                    # must ask for {"answer": true|false}
+    config.demos_prompt = "..."
+  end
+
+Without a token, +label?+ falls back to matching /label|platform|records/i
+and +accepts_demos?+ is always false.
+
 :include:bandcamp-discover.rdoc
 
