@@ -31,7 +31,7 @@ module BandcampDiscover
           items.map do |item|
             {
               url: absolute(item.query_selector("a")[:href]),
-              credit: item.query_selector(".artist-override")&.inner_text
+              credit: item.query_selector(".artist-override")&.inner_text&.strip
             }
           end
         end
@@ -41,6 +41,9 @@ module BandcampDiscover
         Roster.new(band_name: band_name, credits: grid.map { _1[:credit] }, releases: grid.size)
       end
 
+      # Each album carries the credit its grid item showed: the artist's name,
+      # or nil when the release is credited to the page owner. The grid is the
+      # only place the credit appears without another page load.
       def albums(grid)
         guarded do
           semaphore = Async::Semaphore.new(@max_tasks)
@@ -53,12 +56,12 @@ module BandcampDiscover
 
               puts "done scraping #{item[:url]}"
 
-              album
+              [item, album]
             end
           end.map(&:wait)
 
-          albums.map! do |album_url, album_title, album_tags, album_player|
-            {url: album_url, title: album_title, tags: album_tags, player_url: album_player}
+          albums.map! do |item, (album_url, album_title, album_tags, album_player)|
+            {url: album_url, title: album_title, tags: album_tags, player_url: album_player, artist: item[:credit]}
           end
 
           [albums, normalize_tally(albums.map { _1[:tags] }.flatten.tally)]

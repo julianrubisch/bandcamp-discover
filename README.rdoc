@@ -17,7 +17,9 @@ accepts demos. The model and both prompts can be set by the host app:
 Before the bio is asked, the /music grid is read: a page whose releases carry
 no artist credit other than the owner is an artist, not a label, and is
 rejected without a model call. The credits that remain are appended to the
-bio for the model and returned as +artists+ in the scrape result.
+bio for the model and returned as +artists+ in the scrape result; each
+entry in +albums+ carries its own credit as +artist+ (nil when the release
+is credited to the page owner).
 
 Without a token, +label?+ falls back to matching /label|platform|records/i
 and +accepts_demos?+ is always false.
