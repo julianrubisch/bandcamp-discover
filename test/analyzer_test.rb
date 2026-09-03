@@ -4,7 +4,18 @@ require "bandcamp-discover/analyzer"
 # OpenRouter is the host app's dependency, not this gem's, so a stand-in that
 # records the request is enough to prove what the Analyzer sends.
 module OpenRouter
-  Configuration = Struct.new(:access_token)
+  class ConfigurationError < StandardError; end
+
+  # The real gem raises on a missing token instead of returning nil.
+  Configuration = Struct.new(:token) do
+    def access_token=(value)
+      self.token = value
+    end
+
+    def access_token
+      token or raise ConfigurationError, "OpenRouter access token missing!"
+    end
+  end
 
   def self.configuration
     @configuration ||= Configuration.new
