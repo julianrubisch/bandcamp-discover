@@ -43,7 +43,13 @@ module BandcampDiscover
         extras: {response_format: {type: "json_object"}}
       )
 
-      JSON.parse(response["choices"][0]["message"]["content"])["answer"]&.to_s&.downcase == "true"
+      answer(response["choices"][0]["message"]["content"])["answer"]&.to_s&.downcase == "true"
+    end
+
+    # response_format is advisory on OpenRouter: Anthropic models return the
+    # object inside a ```json fence, and some prepend a sentence.
+    def answer(content)
+      JSON.parse(content[/\{.*\}/m] || content)
     end
 
     # The bio alone cannot tell one person releasing under aliases from a

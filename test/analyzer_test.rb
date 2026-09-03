@@ -23,12 +23,12 @@ module OpenRouter
 
   class Client
     class << self
-      attr_accessor :requests, :answer
+      attr_accessor :requests, :answer, :raw
     end
 
     def complete(messages, model:, extras:)
       self.class.requests << {messages: messages, model: model, extras: extras}
-      {"choices" => [{"message" => {"content" => JSON.generate("answer" => self.class.answer)}}]}
+      {"choices" => [{"message" => {"content" => self.class.raw || JSON.generate("answer" => self.class.answer)}}]}
     end
   end
 end
@@ -41,6 +41,7 @@ class AnalyzerTest < Minitest::Test
     OpenRouter.configuration.access_token = "token"
     OpenRouter::Client.requests = []
     OpenRouter::Client.answer = true
+    OpenRouter::Client.raw = nil
   end
 
   def teardown
@@ -97,6 +98,18 @@ class AnalyzerTest < Minitest::Test
     Analyzer.new(nil, credits: []).label?
 
     assert_equal "", OpenRouter::Client.requests.last[:messages].last[:content]
+  end
+
+  def test_reads_the_answer_out_of_a_markdown_fence
+    OpenRouter::Client.raw = "```json\n{\"answer\": false}\n```"
+
+    refute Analyzer.new("bio").label?
+  end
+
+  def test_reads_the_answer_out_of_surrounding_prose
+    OpenRouter::Client.raw = "Sure. {\"answer\": true} Hope that helps."
+
+    assert Analyzer.new("bio").label?
   end
 
   def test_parses_the_answer
