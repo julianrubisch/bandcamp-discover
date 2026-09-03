@@ -25,8 +25,12 @@ module BandcampDiscover
 
     private
 
+    # open_router raises on a missing token rather than returning nil, which
+    # turned the documented regex fallback into an exception.
     def llm?
       defined?(OpenRouter) && !!OpenRouter.configuration.access_token
+    rescue OpenRouter::ConfigurationError
+      false
     end
 
     def ask(prompt)
