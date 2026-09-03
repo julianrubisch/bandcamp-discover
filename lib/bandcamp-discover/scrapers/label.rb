@@ -1,5 +1,5 @@
-require_relative "./base"
-require_relative "./music"
+require_relative "base"
+require_relative "music"
 require_relative "../analyzer"
 
 module BandcampDiscover
@@ -16,9 +16,13 @@ module BandcampDiscover
           name = band_name_location_container.query_selector(".title").inner_text
           location = band_name_location_container.query_selector(".location").inner_text
 
-          if force || Analyzer.new(bio_text&.inner_html).label?
+          music = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks)
+          grid = music.grid
+          roster = music.roster(grid, band_name: name)
+
+          if force || label?(roster, bio_text&.inner_html)
             return Sync do
-              albums, music_tags = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks).scrape
+              albums, music_tags = music.albums(grid)
 
               puts "done scraping #{@url}"
 
@@ -27,6 +31,7 @@ module BandcampDiscover
                 name: name,
                 location: location,
                 bio: bio_text.inner_text,
+                artists: roster.credits,
                 tags_with_weights: music_tags&.compact,
                 albums: albums
               }
@@ -36,6 +41,15 @@ module BandcampDiscover
             nil
           end
         end
+      end
+
+      private
+
+      # The grid can rule a page out for free; only the rest costs a model call.
+      def label?(roster, bio)
+        return false if roster.solo?
+
+        Analyzer.new(bio, credits: roster.credits).label?
       end
     end
   end

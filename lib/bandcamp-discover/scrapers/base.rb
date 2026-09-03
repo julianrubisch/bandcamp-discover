@@ -15,7 +15,13 @@ module BandcampDiscover
       end
 
       def scrape(force: false)
-        yield @page if block_given?
+        guarded { yield @page if block_given? }
+      end
+
+      private
+
+      def guarded
+        yield
       rescue Playwright::TimeoutError => e
         raise ScrapeError, "Timed out waiting for an element on #{@url}: #{e.message}"
       end
