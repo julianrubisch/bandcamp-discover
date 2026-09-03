@@ -1,11 +1,14 @@
 require_relative "base"
 require_relative "album"
+require_relative "../roster"
 require "async"
 require "async/semaphore"
 
 module BandcampDiscover
   module Scrapers
     class Music < Base
+      MAX_ALBUMS = 20
+
       def initialize(url:, browser:, max_tasks:)
         super
 
@@ -14,28 +17,48 @@ module BandcampDiscover
       end
 
       def scrape(force: false)
-        super do |page|
-          page.goto(@url)
-          album_list = page.wait_for_selector("#music-grid")
-          album_links = album_list.query_selector_all("li.music-grid-item > a")
+        albums(grid)
+      end
 
+      # The grid alone tells a label from an artist (see Roster), and it is one
+      # page load against the twenty behind albums, so callers can look at it
+      # before paying for the rest.
+      def grid
+        guarded do
+          @page.goto(@url)
+          items = @page.wait_for_selector("#music-grid").query_selector_all("li.music-grid-item")
+
+          items.map do |item|
+            {
+              url: absolute(item.query_selector("a")[:href]),
+              credit: item.query_selector(".artist-override")&.inner_text
+            }
+          end
+        end
+      end
+
+      def roster(grid, band_name:)
+        Roster.new(band_name: band_name, credits: grid.map { _1[:credit] }, releases: grid.size)
+      end
+
+      def albums(grid)
+        guarded do
           semaphore = Async::Semaphore.new(@max_tasks)
 
-          albums = album_links.take(20).map do |album_link|
+          albums = grid.take(MAX_ALBUMS).map do |item|
             semaphore.async do
-              url = album_link[:href].start_with?("https://") ? album_link[:href] : "#{@base_url}#{album_link[:href]}"
-              puts "starting to scrape #{url}"
+              puts "starting to scrape #{item[:url]}"
 
-              album = Scrapers::Album.new(url: url, browser: @browser).scrape
+              album = Scrapers::Album.new(url: item[:url], browser: @browser).scrape
 
-              puts "done scraping #{url}"
+              puts "done scraping #{item[:url]}"
 
               album
             end
           end.map(&:wait)
 
           albums.map! do |album_url, album_title, album_tags, album_player|
-            { url: album_url, title: album_title, tags: album_tags, player_url: album_player }
+            {url: album_url, title: album_title, tags: album_tags, player_url: album_player}
           end
 
           [albums, normalize_tally(albums.map { _1[:tags] }.flatten.tally)]
@@ -46,6 +69,12 @@ module BandcampDiscover
         total = tally.values.sum.to_f
         tally.transform_values! { |count| count / total }
         tally.sort_by { |k, v| v }.reverse.to_h
+      end
+
+      private
+
+      def absolute(href)
+        href.start_with?("https://") ? href : "#{@base_url}#{href}"
       end
     end
   end

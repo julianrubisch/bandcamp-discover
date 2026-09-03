@@ -75,6 +75,19 @@ class AnalyzerTest < Minitest::Test
     assert_equal "Demos?", OpenRouter::Client.requests.last[:messages].first[:content]
   end
 
+  def test_credits_are_appended_to_the_bio
+    Analyzer.new("We run a tape label.", credits: ["Helen", "Cate Kennan"]).label?
+
+    message = OpenRouter::Client.requests.last[:messages].last[:content]
+    assert_equal "We run a tape label.\n\nReleases on this page are credited to 2 artists other than the page owner: Helen, Cate Kennan.", message
+  end
+
+  def test_no_credits_sends_the_bio_alone
+    Analyzer.new(nil, credits: []).label?
+
+    assert_equal "", OpenRouter::Client.requests.last[:messages].last[:content]
+  end
+
   def test_parses_the_answer
     OpenRouter::Client.answer = false
 
