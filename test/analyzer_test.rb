@@ -112,6 +112,19 @@ class AnalyzerTest < Minitest::Test
     assert Analyzer.new("bio").label?
   end
 
+  def test_label_raises_a_named_error_carrying_a_reply_without_an_object
+    OpenRouter::Client.raw = "I don't see enough information to decide."
+
+    error = assert_raises(BandcampDiscover::Analyzer::NoAnswer) { Analyzer.new("bio").label? }
+    assert_includes error.message, "I don't see enough information"
+  end
+
+  def test_demos_defaults_to_false_on_a_reply_without_an_object
+    OpenRouter::Client.raw = "I don't see any mention of demos here."
+
+    refute Analyzer.new("bio").accepts_demos?
+  end
+
   def test_parses_the_answer
     OpenRouter::Client.answer = false
 

@@ -3,6 +3,10 @@ require_relative "configuration"
 
 module BandcampDiscover
   class Analyzer
+    # The model replied, but not with the object asked for. Carries the reply so
+    # a failed job says what was said instead of where JSON.parse gave up.
+    class NoAnswer < StandardError; end
+
     # A per-call model still wins over the configured one so existing callers
     # keep their behaviour.
     def initialize(description, model = nil, credits: [])
@@ -17,10 +21,14 @@ module BandcampDiscover
       @description.to_s.match?(/label|platform|records/i)
     end
 
+    # The prompt says to default to false; a reply that never reached an answer
+    # is that default, not a reason to lose the whole scrape.
     def accepts_demos?
       return false unless llm?
 
       ask(BandcampDiscover.configuration.demos_prompt)
+    rescue NoAnswer
+      false
     end
 
     private
@@ -50,6 +58,8 @@ module BandcampDiscover
     # object inside a ```json fence, and some prepend a sentence.
     def answer(content)
       JSON.parse(content[/\{.*\}/m] || content)
+    rescue JSON::ParserError
+      raise NoAnswer, "model replied without a JSON object: #{content.to_s.strip[0, 200].inspect}"
     end
 
     # The bio alone cannot tell one person releasing under aliases from a
