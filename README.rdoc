@@ -21,6 +21,10 @@ bio for the model and returned as +artists+ in the scrape result; each
 entry in +albums+ carries its own credit as +artist+ (nil when the release
 is credited to the page owner).
 
+Pages are read at DOMContentLoaded and images, media and fonts are never
+fetched: everything the scrapers use is in the server-rendered HTML, and the
+/music grid is completed from the JSON Bandcamp ships for its own script.
+
 Without a token, +label?+ falls back to matching /label|platform|records/i
 and +accepts_demos?+ is always false.
 

@@ -2,6 +2,7 @@ require_relative "base"
 require_relative "album"
 require_relative "../roster"
 require "async"
+require "json"
 require "async/semaphore"
 
 module BandcampDiscover
@@ -23,18 +24,33 @@ module BandcampDiscover
       # The grid alone tells a label from an artist (see Roster), and it is one
       # page load against the twenty behind albums, so callers can look at it
       # before paying for the rest.
+      #
+      # Bandcamp renders the first sixteen items as HTML and ships the rest as
+      # JSON in data-client-items for its own script to render after load. Read
+      # both and no script has to run: the grid is complete at DOMContentLoaded.
       def grid
         guarded do
-          @page.goto(@url)
-          items = @page.wait_for_selector("#music-grid").query_selector_all("li.music-grid-item")
+          visit(@url)
+          grid = @page.wait_for_selector("#music-grid")
 
-          items.map do |item|
-            {
-              url: absolute(item.query_selector("a")[:href]),
-              credit: item.query_selector(".artist-override")&.inner_text&.strip
-            }
+          rendered = grid.query_selector_all("li.music-grid-item").map do |item|
+            {url: item.query_selector("a")[:href], credit: item.query_selector(".artist-override")&.inner_text}
           end
+
+          merge_grid(rendered, grid.get_attribute("data-client-items"))
         end
+      end
+
+      # A credit is present in the JSON only when the release is not the
+      # owner's; the same convention as the rendered override.
+      def merge_grid(rendered, client_items_json)
+        client = JSON.parse(client_items_json.to_s.empty? ? "[]" : client_items_json).map do |item|
+          {url: item["page_url"], credit: item["artist"]}
+        end
+
+        (rendered + client)
+          .map { |item| {url: absolute(item[:url]), credit: credit_or_nil(item[:credit])} }
+          .uniq { |item| item[:url] }
       end
 
       def roster(grid, band_name:)
@@ -78,6 +94,11 @@ module BandcampDiscover
 
       def absolute(href)
         href.start_with?("https://") ? href : "#{@base_url}#{href}"
+      end
+
+      def credit_or_nil(credit)
+        text = credit.to_s.strip
+        text.empty? ? nil : text
       end
     end
   end

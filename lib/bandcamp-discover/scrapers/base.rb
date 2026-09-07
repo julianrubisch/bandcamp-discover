@@ -7,10 +7,16 @@ module BandcampDiscover
     class ScrapeError < StandardError; end
 
     class Base
+      # Nothing read from a page is an image, a player or a font, and the
+      # album pages are twenty per label; not fetching them is most of the
+      # time and bandwidth a scrape used to cost.
+      BLOCKED_RESOURCES = %w[image media font].freeze
+
       def initialize(url:, browser:, max_tasks: 2)
         @url = url
         @browser = browser
         @page = browser.new_page
+        @page.route("**/*", ->(route, request) { BLOCKED_RESOURCES.include?(request.resource_type) ? route.abort : route.continue })
         @max_tasks = max_tasks
       end
 
@@ -19,6 +25,13 @@ module BandcampDiscover
       end
 
       private
+
+      # Everything read is in the server-rendered HTML, so the DOM is enough;
+      # waiting for "load" waited on every tracker and player asset, and one
+      # slow one failed the whole label.
+      def visit(url)
+        @page.goto(url, waitUntil: "domcontentloaded")
+      end
 
       def guarded
         yield
