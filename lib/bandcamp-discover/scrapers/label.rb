@@ -8,7 +8,7 @@ module BandcampDiscover
       def scrape(force: false)
         super do |page|
           puts "starting to scrape #{@url}"
-          page.goto(@url)
+          visit(@url)
           bio_container = page.wait_for_selector("#bio-container")
           bio_text = bio_container.query_selector("#bio-text")
 

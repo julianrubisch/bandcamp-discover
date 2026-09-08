@@ -1,12 +1,12 @@
-require_relative "./base"
-require_relative "./music"
+require_relative "base"
+require_relative "music"
 
 module BandcampDiscover
   module Scrapers
     class Album < Base
       def scrape(force: false)
         super do |page|
-          page.goto(@url)
+          visit(@url)
 
           title = page.query_selector("meta[name=title]")&.[](:content)
 
