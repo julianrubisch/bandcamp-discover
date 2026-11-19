@@ -23,6 +23,11 @@ module BandcampDiscover
       # "a" is albums, "s" is subscriptions.
       RESULT_TYPES = %w[a s].freeze
 
+      # Bandcamp renamed the response fields from snake_case to camelCase in
+      # November 2026 while the request stayed snake_case. Both are read in case
+      # it rolls back or only part of their fleet has it.
+      BAND_URL_KEYS = %w[bandUrl band_url].freeze
+
       class ResponseError < StandardError; end
 
       # browser: is unused, kept so existing callers do not break.
@@ -69,7 +74,7 @@ module BandcampDiscover
           results = body["results"]
           break if results.empty?
 
-          urls.concat(results.map { root_url(_1["band_url"]) }.compact)
+          urls.concat(results.map { root_url(band_url(_1)) }.compact)
 
           cursor = body["cursor"]
           break if cursor.nil? || cursor.empty?
@@ -115,12 +120,16 @@ module BandcampDiscover
           raise ResponseError, "discover_web response has no results array (keys: #{body.is_a?(Hash) ? body.keys.inspect : body.class})"
         end
 
-        return if body["results"].empty? || body["results"].any? { _1.is_a?(Hash) && _1.key?("band_url") }
+        return if body["results"].empty? || body["results"].any? { _1.is_a?(Hash) && _1.keys.intersect?(BAND_URL_KEYS) }
 
-        raise ResponseError, "discover_web results carry no band_url (keys: #{body["results"].first.keys.inspect})"
+        raise ResponseError, "discover_web results carry no band url (looked for #{BAND_URL_KEYS.join(", ")}; keys: #{body["results"].first.keys.inspect})"
       end
 
-      # Strips the ?from=discover_page band_url carries.
+      def band_url(result)
+        result.values_at(*BAND_URL_KEYS).compact.first
+      end
+
+      # Strips the ?from=discover_page the band url carries.
       def root_url(band_url)
         return nil if band_url.nil? || band_url.empty?
 
