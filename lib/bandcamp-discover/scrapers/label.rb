@@ -14,7 +14,7 @@ module BandcampDiscover
 
           band_name_location_container = page.wait_for_selector("#band-name-location")
           name = band_name_location_container.query_selector(".title").inner_text
-          location = band_name_location_container.query_selector(".location").inner_text
+          location = band_name_location_container.query_selector(".location")&.inner_text
 
           music = Scrapers::Music.new(url: "#{@url}/music", browser: @browser, max_tasks: @max_tasks)
           grid = music.grid
@@ -30,7 +30,7 @@ module BandcampDiscover
                 url: @url,
                 name: name,
                 location: location,
-                bio: bio_text.inner_text,
+                bio: bio_text&.inner_text,
                 artists: roster.credits,
                 tags_with_weights: music_tags&.compact,
                 albums: albums
