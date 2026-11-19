@@ -14,7 +14,7 @@ class DiscoverTest < Minitest::Test
 
   def batch(band_urls, cursor: nil)
     {
-      "results" => band_urls.map { {"band_url" => _1, "item_type" => "a"} },
+      "results" => band_urls.map { {"bandUrl" => _1, "itemType" => "a"} },
       "cursor" => cursor
     }
   end
@@ -71,11 +71,19 @@ class DiscoverTest < Minitest::Test
     assert_match(/no results array/, error.message)
   end
 
-  def test_raises_when_results_no_longer_carry_band_url
-    scraper = build(batches: [{"results" => [{"item_id" => 1, "band_name" => "x"}], "cursor" => nil}])
+  def test_raises_when_results_no_longer_carry_a_band_url
+    scraper = build(batches: [{"results" => [{"itemId" => 1, "bandName" => "x"}], "cursor" => nil}])
 
     error = assert_raises(Discover::ResponseError) { collect(scraper) }
-    assert_match(/no band_url/, error.message)
+    assert_match(/no band url/, error.message)
+    assert_match(/itemId/, error.message)
+  end
+
+  # The spelling the API used until November 2026.
+  def test_still_reads_snake_case_results
+    scraper = build(batches: [{"results" => [{"band_url" => "https://a.bandcamp.com?from=discover_page"}], "cursor" => nil}])
+
+    assert_equal ["https://a.bandcamp.com"], collect(scraper)
   end
 
   def test_empty_results_is_not_an_error
